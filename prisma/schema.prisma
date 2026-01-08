@@ -4,11 +4,11 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
   name      String?
@@ -18,7 +18,7 @@ model User {
 }
 
 model Record {
-  id            String   @id @default(cuid())
+  id            Int      @id @default(autoincrement())
   serialNumber  Int
   receiptNumber String   @unique
   name          String
@@ -29,6 +29,5 @@ model Record {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  @@index([receiptNumber])
   @@index([name])
 }

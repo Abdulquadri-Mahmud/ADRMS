@@ -4,25 +4,37 @@ import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-const RecordSchema = z.object({
-    id: z.string().optional(),
-    name: z.string().min(1, "Name is required"),
-    amount: z.coerce.number().min(0, "Amount must be positive"), // Handle string input for numbers
+/**
+ * Base schema used for creating records
+ */
+const CreateRecordSchema = z.object({
+    name: z.string().min(1, 'Name is required'),
+    amount: z.coerce.number().min(0, 'Amount must be positive'),
     date: z.coerce.date(),
-    receiptNumber: z.string().min(1, "Receipt number is required"),
+    receiptNumber: z.string().min(1, 'Receipt number is required'),
     description: z.string().optional(),
-    type: z.string().min(1, "Type is required"),
+    type: z.string().min(1, 'Type is required'),
+})
+
+/**
+ * Schema used for updating records
+ * NOTE: id is NOT included and receiptNumber is excluded by default
+ */
+const UpdateRecordSchema = CreateRecordSchema.omit({
+    receiptNumber: true,
 })
 
 export async function getRecords(query?: string, page = 1, limit = 50) {
     const skip = (page - 1) * limit
 
-    const where = query ? {
-        OR: [
-            { name: { contains: query, mode: 'insensitive' as const } }, // SQLite insensitive might differ but works usually
-            { receiptNumber: { contains: query } },
-        ]
-    } : {}
+    const where = query
+        ? {
+              OR: [
+                  { name: { contains: query } },
+                  { receiptNumber: { contains: query } },
+              ],
+          }
+        : {}
 
     const [records, total] = await Promise.all([
         prisma.record.findMany({
@@ -31,21 +43,25 @@ export async function getRecords(query?: string, page = 1, limit = 50) {
             skip,
             take: limit,
         }),
-        prisma.record.count({ where })
+        prisma.record.count({ where }),
     ])
 
-    return { records, total, totalPages: Math.ceil(total / limit) }
+    return {
+        records,
+        total,
+        totalPages: Math.ceil(total / limit),
+    }
 }
 
 export async function createRecord(prevState: any, formData: FormData) {
     const rawData = Object.fromEntries(formData.entries())
-    const result = RecordSchema.safeParse(rawData)
+    const result = CreateRecordSchema.safeParse(rawData)
 
     if (!result.success) {
         return {
             success: false,
             errors: result.error.flatten().fieldErrors,
-            message: "Validation failed"
+            message: 'Validation failed',
         }
     }
 
@@ -55,8 +71,9 @@ export async function createRecord(prevState: any, formData: FormData) {
         // Generate serial number manually
         const lastRecord = await prisma.record.findFirst({
             orderBy: { serialNumber: 'desc' },
-            select: { serialNumber: true }
+            select: { serialNumber: true },
         })
+
         const serialNumber = (lastRecord?.serialNumber || 0) + 1
 
         await prisma.record.create({
@@ -67,38 +84,45 @@ export async function createRecord(prevState: any, formData: FormData) {
                 receiptNumber,
                 description,
                 type,
-                serialNumber
-            }
+                serialNumber,
+            },
         })
+
         revalidatePath('/dashboard/records')
         revalidatePath('/dashboard')
+
         return { success: true, message: 'Record created successfully' }
     } catch (error: any) {
         if (error.code === 'P2002') {
             return { success: false, message: 'Receipt number already exists' }
         }
+
         return { success: false, message: 'Failed to create record' }
     }
 }
 
 export async function updateRecord(id: string, formData: FormData) {
     const rawData = Object.fromEntries(formData.entries())
-    // Exclude receiptNumber from update usually, but if needed allow it.
-    const result = RecordSchema.safeParse(rawData)
+    const result = UpdateRecordSchema.safeParse(rawData)
 
     if (!result.success) {
-        return { success: false, errors: result.error.flatten().fieldErrors }
+        return {
+            success: false,
+            errors: result.error.flatten().fieldErrors,
+        }
     }
 
     try {
         await prisma.record.update({
             where: { id },
-            data: result.data
+            data: result.data,
         })
+
         revalidatePath('/dashboard/records')
         revalidatePath('/dashboard')
-        return { success: true, message: "Updated successfully" }
+
+        return { success: true, message: 'Updated successfully' }
     } catch (error) {
-        return { success: false, message: "Update failed" }
+        return { success: false, message: 'Update failed' }
     }
 }
