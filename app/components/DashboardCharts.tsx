@@ -56,7 +56,7 @@ export default function DashboardCharts({ chartData, pieData }: { chartData: any
                                     fontSize: '12px',
                                     fontWeight: 'bold'
                                 }}
-                                formatter={(value: number) => [`₦${value.toLocaleString()}`, 'Total']}
+                                formatter={(value: any) => [`₦${Number(value || 0).toLocaleString('en-GB')}`, 'Total']}
                             />
                             <Bar
                                 dataKey="value"
