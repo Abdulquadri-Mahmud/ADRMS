@@ -49,31 +49,6 @@ export default function BackgroundAnimation() {
                 className="absolute -bottom-[10%] left-[20%] w-[60%] h-[60%] bg-emerald-50/40 rounded-full blur-[150px]"
             />
 
-            {/* Floating Geometric Particles */}
-            {[...Array(6)].map((_, i) => (
-                <motion.div
-                    key={i}
-                    initial={{
-                        x: Math.random() * 100 + "%",
-                        y: Math.random() * 100 + "%",
-                        opacity: 0.1
-                    }}
-                    animate={{
-                        y: ["-20%", "120%"],
-                        rotate: [0, 360],
-                    }}
-                    transition={{
-                        duration: Math.random() * 20 + 20,
-                        repeat: Infinity,
-                        ease: "linear",
-                        delay: Math.random() * 10
-                    }}
-                    className="absolute h-16 w-16 border border-emerald-200/20 rounded-2xl"
-                    style={{
-                        transform: `rotate(${Math.random() * 45}deg)`
-                    }}
-                />
-            ))}
 
             {/* Grid Pattern Overlay */}
             <div

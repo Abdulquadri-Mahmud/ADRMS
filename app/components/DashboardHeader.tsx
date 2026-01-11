@@ -18,6 +18,8 @@ import {
 } from 'lucide-react'
 import { logoutAction } from '@/app/actions/auth'
 
+import Logo from '@/app/component/logo/Logo'
+
 interface UserSession {
     id: string
     name: string | null
@@ -28,8 +30,18 @@ interface UserSession {
 }
 
 export default function DashboardHeader({ session }: { session: any }) {
+    const [isScrolled, setIsScrolled] = useState(false)
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 20)
+        }
+        window.addEventListener('scroll', handleScroll)
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [])
+
     const dropdownRef = useRef<HTMLDivElement>(null)
     const pathname = usePathname()
 
@@ -56,19 +68,16 @@ export default function DashboardHeader({ session }: { session: any }) {
     ]
 
     return (
-        <nav className="bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-50">
+        <nav className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
+                ? "bg-white/80 backdrop-blur-xl border-b border-gray-100 py-2 shadow-sm"
+                : "bg-white py-1 border-b border-transparent"
+            }`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-20 items-center">
+                <div className="flex justify-between h-16 items-center">
                     {/* Left: Logo & Desktop Nav */}
                     <div className="flex items-center space-x-12">
                         <Link href="/dashboard" className="flex items-center space-x-3 group">
-                            <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-gray-900 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-                                <span className="text-white font-black text-xs">AD</span>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="font-black text-xl tracking-tighter text-gray-900 leading-none">ADRMS</span>
-                                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mt-1">Jama'at System</span>
-                            </div>
+                            <Logo width={isScrolled ? 35 : 42} height={isScrolled ? 35 : 42} text="ADRMS" size={isScrolled ? "md" : "xl"} />
                         </Link>
 
                         <div className="hidden md:flex space-x-2">

@@ -55,36 +55,6 @@ export default function Hero() {
           </Link>
         </motion.div>
       </div>
-
-      {/* Abstract Dashboard Preview at bottom of hero */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.4 }}
-        className="mt-16 max-w-5xl mx-auto px-4"
-      >
-        <div className="relative rounded-t-xl bg-gray-900 p-2 shadow-2xl border border-gray-200 ring-1 ring-gray-900/5">
-          <div className="absolute top-0 left-0 w-full h-full bg-gray-900 rounded-t-xl opacity-5"></div>
-          <div className="rounded-lg overflow-hidden bg-white">
-            {/* Simplified Header of Fake Dashboard */}
-            <div className="border-b border-gray-200 bg-gray-50 p-4 flex items-center space-x-4">
-              <div className="flex space-x-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                <div className="w-3 h-3 rounded-full bg-green-400"></div>
-              </div>
-              <div className="h-4 w-64 bg-gray-200 rounded-md"></div>
-            </div>
-            {/* Fake Body */}
-            <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="h-24 rounded bg-blue-50 border border-blue-100"></div>
-              <div className="h-24 rounded bg-emerald-50 border border-emerald-100"></div>
-              <div className="h-24 rounded bg-purple-50 border border-purple-100"></div>
-              <div className="col-span-3 h-48 rounded bg-gray-50 border border-gray-100 mt-2"></div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
     </section>
   );
 }

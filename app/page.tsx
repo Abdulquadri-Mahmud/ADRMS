@@ -5,12 +5,10 @@ import Hero from "./component/Hero";
 import HowItWorks from "./component/HowItWorks";
 import Footer from "./component/layout/Footer";
 import Header from "./component/layout/Header";
-import BackgroundAnimation from "./component/BackgroundAnimation";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen relative overflow-hidden">
-      <BackgroundAnimation />
       <Header />
       <main className="flex-grow">
         <Hero />
