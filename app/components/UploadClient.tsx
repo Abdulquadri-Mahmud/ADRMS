@@ -182,8 +182,8 @@ export default function UploadClient() {
                     className="relative group cursor-pointer"
                     onClick={() => fileInputRef.current?.click()}
                 >
-                    <div className="absolute -inset-2 bg-gradient-to-r from-emerald-500/20 via-blue-500/20 to-emerald-500/20 rounded-[3rem] blur-2xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
-                    <div className="relative bg-white border-4 border-dashed border-gray-100 rounded-[3rem] p-16 text-center hover:border-emerald-400 hover:bg-emerald-50/20 transition-all duration-500 shadow-sm">
+                    <div className="absolute -inset-2 bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-emerald-500/10 md:rounded-[2.5rem] rounded-2xl blur-2xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
+                    <div className="relative bg-white border-2 border-dashed border-gray-100 md:rounded-[2.5rem] rounded-2xl md:p-16 p-8 text-center hover:border-emerald-400 hover:bg-emerald-50/20 transition-all duration-500">
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -218,7 +218,7 @@ export default function UploadClient() {
                         <motion.div
                             initial={{ opacity: 0, x: -30 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 border border-gray-100"
+                            className="bg-white md:rounded-[2.5rem] rounded-2xl md:p-8 p-6 border border-gray-100"
                         >
                             <div className="flex items-start justify-between mb-8">
                                 <div className="p-4 bg-emerald-50 rounded-2xl">
@@ -262,7 +262,7 @@ export default function UploadClient() {
                                         <Users className="h-5 w-5" />
                                     </div>
                                     <div className="text-left">
-                                        <div className="font-bold text-base">Tajnid (Touchneet)</div>
+                                        <div className="font-bold text-base">Tajnid Records</div>
                                         <div className="text-[10px] font-black uppercase tracking-widest opacity-60">Membership Records</div>
                                     </div>
                                     {selectedType === 'TAJNID' && <CheckCircle2 className="ml-auto h-5 w-5 text-blue-600" />}
@@ -272,7 +272,7 @@ export default function UploadClient() {
                             <button
                                 onClick={startImport}
                                 disabled={isUploading || !selectedType}
-                                className="w-full mt-10 flex items-center justify-center px-8 py-5 bg-gray-900 text-white rounded-[2rem] font-black text-sm hover:bg-emerald-600 disabled:opacity-30 disabled:hover:bg-gray-900 transition-all shadow-xl shadow-gray-900/10 active:scale-95 group"
+                                className="w-full mt-10 flex items-center justify-center px-8 py-5 bg-gray-900 text-white md:rounded-[2rem] rounded-xl font-black text-sm hover:bg-emerald-600 disabled:opacity-30 disabled:hover:bg-gray-900 transition-all active:scale-95 group"
                             >
                                 {isUploading ? (
                                     <>
@@ -303,13 +303,13 @@ export default function UploadClient() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.05 }}
-                                    className={`p-6 rounded-[2rem] border-2 transition-all duration-500 ${res.status === 'processing'
-                                        ? 'bg-emerald-50 border-emerald-500 ring-8 ring-emerald-500/5'
+                                    className={`p-6 md:rounded-[2rem] rounded-2xl border-2 transition-all duration-500 ${res.status === 'processing'
+                                        ? 'bg-emerald-50 border-emerald-500 ring-4 ring-emerald-500/5'
                                         : res.status === 'completed'
                                             ? 'bg-white border-gray-100 grayscale-0'
                                             : res.status === 'error'
                                                 ? 'bg-red-50 border-red-200'
-                                                : 'bg-white border-gray-50 shadow-sm'
+                                                : 'bg-white border-gray-50'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between">

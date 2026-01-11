@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useActionState, useEffect } from 'react'
-import { Plus, Trash2, Shield, User, Lock, Loader2, Building2, Key, Eye, X } from 'lucide-react'
+import { useFormStatus } from 'react-dom'
+import { Plus, Trash2, Shield, User, Lock, Loader2, Building2, Key, Eye, X, Info, AlertTriangle, Check } from 'lucide-react'
 import { createAdmin, deleteAdmin } from '../actions/super-admin'
 import { Modal } from './ui/Modal'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -29,6 +30,15 @@ export default function SuperAdminClient({
 }) {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [selectedAdmin, setSelectedAdmin] = useState<any>(null)
+    const [alertConfig, setAlertConfig] = useState<{
+        show: boolean,
+        title: string,
+        message: string,
+        type: 'info' | 'error' | 'confirm',
+        onConfirm?: () => void,
+        confirmText?: string,
+        cancelText?: string
+    }>({ show: false, title: '', message: '', type: 'info' })
     const [state, formAction] = useActionState(createAdmin, { success: false, message: '' })
 
     useEffect(() => {
@@ -38,13 +48,25 @@ export default function SuperAdminClient({
     }, [state.success])
 
     const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this admin? This action cannot be undone.')) {
-            try {
-                await deleteAdmin(id)
-            } catch (error: any) {
-                alert(error.message)
+        setAlertConfig({
+            show: true,
+            title: 'Confirm Deletion',
+            message: 'Are you sure you want to delete this admin account? This action cannot be undone and will revoke their dashboard access permanently.',
+            type: 'confirm',
+            onConfirm: async () => {
+                setAlertConfig(prev => ({ ...prev, show: false }))
+                try {
+                    await deleteAdmin(id)
+                } catch (error: any) {
+                    setAlertConfig({
+                        show: true,
+                        title: 'Operational Error',
+                        message: error.message || 'We encountered a problem while trying to delete this account.',
+                        type: 'error'
+                    })
+                }
             }
-        }
+        })
     }
 
     return (
@@ -281,8 +303,66 @@ export default function SuperAdminClient({
     )
 }
 
+function NotificationModal({ config, onClose }: { config: any, onClose: () => void }) {
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative bg-white w-full max-w-sm md:rounded-[2rem] rounded-2xl overflow-hidden shadow-2xl border border-gray-100 p-8 text-center"
+            >
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${config.type === 'error' ? 'bg-red-50 text-red-600' :
+                    config.type === 'confirm' ? 'bg-amber-50 text-amber-600' :
+                        'bg-blue-50 text-blue-600'
+                    }`}>
+                    {config.type === 'error' ? <AlertTriangle className="w-8 h-8" /> :
+                        config.type === 'confirm' ? <Info className="w-8 h-8" /> :
+                            <Check className="w-8 h-8" />}
+                </div>
+
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight mb-2">{config.title}</h3>
+                <p className="text-sm text-gray-500 font-medium leading-relaxed mb-8">{config.message}</p>
+
+                <div className="flex flex-col space-y-3">
+                    {config.type === 'confirm' ? (
+                        <>
+                            <button
+                                onClick={config.onConfirm}
+                                className="w-full py-4 bg-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all shadow-lg"
+                            >
+                                {config.confirmText || 'Yes, Proceed'}
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="w-full py-4 bg-gray-50 text-gray-400 rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-100 transition-all"
+                            >
+                                {config.cancelText || 'Cancel'}
+                            </button>
+                        </>
+                    ) : (
+                        <button
+                            onClick={onClose}
+                            className="w-full py-4 bg-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-emerald-600 transition-all"
+                        >
+                            Dismiss
+                        </button>
+                    )}
+                </div>
+            </motion.div>
+        </div>
+    )
+}
+
 function SubmitButton() {
-    const { pending } = require('react-dom').useFormStatus()
+    const { pending } = useFormStatus()
     return (
         <button
             type="submit"

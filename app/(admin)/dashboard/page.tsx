@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb'
 import { FileText, DollarSign, Calendar, TrendingUp, FileSpreadsheet, Plus, Users, Building2 } from 'lucide-react'
 import Link from 'next/link'
 import { getSession } from '@/lib/session'
+import DashboardCharts from '@/app/components/DashboardCharts'
 
 async function getStats(session: any) {
     const isSuperAdmin = session.user.role === 'SUPER_ADMIN'
@@ -34,11 +35,48 @@ async function getStats(session: any) {
     ]).toArray()
     const currentMonthly = monthlyResult[0]?.total || 0
 
+    // Get monthly collections for the last 6 months
+    const sixMonthsAgo = new Date()
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5)
+    sixMonthsAgo.setDate(1)
+
+    const monthlyCollections = await db.collection('ChandaAm').aggregate([
+        { $match: { ...match, createdAt: { $gte: sixMonthsAgo } } },
+        {
+            $group: {
+                _id: {
+                    month: { $month: '$createdAt' },
+                    year: { $year: '$createdAt' }
+                },
+                total: { $sum: '$totalNgn' }
+            }
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1 } }
+    ]).toArray()
+
+    const chartData = monthlyCollections.map(item => ({
+        name: new Date(2000, item._id.month - 1).toLocaleString('default', { month: 'short' }),
+        value: item.total
+    }))
+
+    // Get Tajnid composition by Majlis
+    const tajnidComposition = await db.collection('TajnidRecord').aggregate([
+        { $match: match },
+        { $group: { _id: '$majlis', count: { $sum: 1 } } }
+    ]).toArray()
+
+    const pieData = tajnidComposition.map(item => ({
+        name: item._id || 'UNASSIGNED',
+        value: item.count
+    }))
+
     return {
         totalRecords: totalChanda,
         totalTajnid,
         totalAmount,
-        monthlyAmount: currentMonthly
+        monthlyAmount: currentMonthly,
+        chartData,
+        pieData
     }
 }
 
@@ -77,33 +115,35 @@ export default async function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatsCard
                     title="Chanda Records"
-                    description="Total Chanda Am financial receipts."
+                    description="Total collections to date"
                     value={stats.totalRecords.toLocaleString()}
-                    icon={<FileText className="h-6 w-6 text-blue-600" />}
+                    icon={<FileText className="h-5 w-5 text-blue-600" />}
                     color="blue"
                 />
                 <StatsCard
                     title="Tajnid Records"
-                    description="Total registered members (Touchneet)."
+                    description="Total registered members"
                     value={stats.totalTajnid.toLocaleString()}
-                    icon={<Users className="h-6 w-6 text-orange-600" />}
+                    icon={<Users className="h-5 w-5 text-orange-600" />}
                     color="orange"
                 />
                 <StatsCard
-                    title="Total Collections"
-                    description="Cumulative sum of Chanda Am."
-                    value={`₦${stats.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-                    icon={<DollarSign className="h-6 w-6 text-emerald-600" />}
+                    title="Total Funds"
+                    description="Cumulative collection"
+                    value={`₦${stats.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 0 })}`}
+                    icon={<DollarSign className="h-5 w-5 text-emerald-600" />}
                     color="emerald"
                 />
                 <StatsCard
-                    title="Monthly Perf."
-                    description="Total collections this month."
-                    value={`₦${stats.monthlyAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
-                    icon={<Calendar className="h-6 w-6 text-purple-600" />}
+                    title="Monthly Velocity"
+                    description="Current month total"
+                    value={`₦${stats.monthlyAmount.toLocaleString(undefined, { minimumFractionDigits: 0 })}`}
+                    icon={<Calendar className="h-5 w-5 text-purple-600" />}
                     color="purple"
                 />
             </div>
+
+            <DashboardCharts chartData={stats.chartData} pieData={stats.pieData} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Operations Panel */}
@@ -175,17 +215,16 @@ export default async function DashboardPage() {
 
 function StatsCard({ title, description, value, icon, color }: { title: string, description: string, value: string, icon: React.ReactNode, color: string }) {
     return (
-        <div className="p-6 rounded-3xl bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:translate-y-[-2px] transition-all duration-300">
+        <div className="p-5 md:rounded-[2rem] rounded-2xl bg-white border border-gray-100 transition-all duration-300">
             <div className="flex items-start justify-between">
-                <div className="p-3 rounded-2xl bg-gray-50/80 border border-gray-100">
+                <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-100">
                     {icon}
                 </div>
-                <div className="bg-emerald-50 px-2 py-0.5 rounded text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">Live</div>
             </div>
-            <div className="mt-5">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">{title}</h3>
-                <p className="text-3xl font-black text-gray-900 tabular-nums">{value}</p>
-                <p className="mt-3 text-xs text-gray-400 leading-relaxed font-medium">
+            <div className="mt-4">
+                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">{title}</h3>
+                <p className="text-2xl font-black text-gray-900 tabular-nums tracking-tighter uppercase">{value}</p>
+                <p className="mt-2 text-[10px] text-gray-400 leading-relaxed font-bold uppercase tracking-tight">
                     {description}
                 </p>
             </div>

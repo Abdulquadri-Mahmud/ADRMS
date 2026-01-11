@@ -17,94 +17,64 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg border border-gray-100">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-6">
+            <div className="max-w-md w-full md:p-10 p-6 bg-white md:rounded-[2.5rem] rounded-2xl border border-gray-100">
                 <div className="text-center">
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-center scale-110 mb-2">
                         <Logo width={45} height={45} text="ADRMS" size="xl" />
                     </div>
-                    <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-                        Admin Login
+                    <h2 className="mt-6 text-2xl font-black text-gray-900 uppercase tracking-tighter">
+                        Administrative Access
                     </h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                        Sign in to manage records
+                    <p className="mt-2 text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">
+                        Gateway to the Blockchain Registry
                     </p>
                 </div>
 
-                <form action={formAction} className="mt-8 space-y-6">
-                    <div className="rounded-md -space-y-px">
-                        <div className="relative">
-                            <label htmlFor="identifier" className="sr-only">Email or Jamaat Name</label>
+                <form action={formAction} className="mt-10 space-y-4">
+                    <div className="space-y-4">
+                        <div className="relative group">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block ml-1 mb-1.5">Identifier</label>
                             <input
-                                id="identifier"
                                 name="identifier"
                                 type="text"
                                 required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm"
-                                placeholder="Email or Jamaat Name"
+                                className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none font-bold text-sm placeholder:text-gray-300"
+                                placeholder="Email or Organization Name"
                             />
                         </div>
-                        <div className="relative">
-                            <label htmlFor="password" className="sr-only">Password</label>
-                            <input
-                                id="password"
-                                name="password"
-                                type={showPassword ? "text" : "password"}
-                                autoComplete="current-password"
-                                required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm pr-10"
-                                placeholder="Password"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center z-20 cursor-pointer text-gray-400 hover:text-emerald-500 transition-colors"
-                            >
-                                <AnimatePresence mode="wait" initial={false}>
-                                    <motion.div
-                                        key={showPassword ? 'visible' : 'hidden'}
-                                        initial={{ opacity: 0, scale: 0.8, rotate: -45 }}
-                                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                                        exit={{ opacity: 0, scale: 0.8, rotate: 45 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
-                                        {showPassword ? (
-                                            <EyeOff className="h-5 w-5" />
-                                        ) : (
-                                            <Eye className="h-5 w-5" />
-                                        )}
-                                    </motion.div>
-                                </AnimatePresence>
-                            </button>
+                        <div className="relative group">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block ml-1 mb-1.5">Security Key</label>
+                            <div className="relative">
+                                <input
+                                    name="password"
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none font-bold text-sm placeholder:text-gray-300 pr-12"
+                                    placeholder="Enter secure password"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-500 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     {state?.message && (
-                        <div className="text-red-500 text-sm text-center">{state.message}</div>
-                    )}
-                    {state?.errors?.identifier && (
-                        <div className="text-red-500 text-sm text-center">{state.errors.identifier[0]}</div>
-                    )}
-                    {state?.errors?.password && (
-                        <div className="text-red-500 text-sm text-center">{state.errors.password[0]}</div>
+                        <div className="p-3 bg-red-50 text-red-600 text-[10px] font-bold text-center rounded-lg border border-red-100">{state.message}</div>
                     )}
 
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={isPending}
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 transition-all"
-                        >
-                            {isPending ? (
-                                <Loader2 className="animate-spin h-5 w-5" />
-                            ) : (
-                                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                                    <Key className="h-5 w-5 text-emerald-500 group-hover:text-emerald-400" aria-hidden="true" />
-                                </span>
-                            )}
-                            {isPending ? 'Signing in...' : 'Sign in'}
-                        </button>
-                    </div>
+                    <button
+                        type="submit"
+                        disabled={isPending}
+                        className="w-full py-4 bg-gray-900 text-white md:rounded-xl rounded-lg font-black text-sm hover:bg-emerald-600 transition-all disabled:opacity-50 flex items-center justify-center uppercase tracking-widest"
+                    >
+                        {isPending ? <Loader2 className="animate-spin h-5 w-5" /> : 'Authenticate'}
+                    </button>
                 </form>
             </div>
         </div>

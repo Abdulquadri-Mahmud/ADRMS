@@ -229,6 +229,40 @@ export async function createChandaAmRecord(formData: FormData) {
     }
 }
 
+export async function updateChandaAmRecord(id: string, formData: FormData) {
+    const session = await getSession()
+    if (!session || !session.user.organizationId) return { success: false, message: 'Unauthorized' }
+
+    const rawData = Object.fromEntries(formData.entries())
+    const result = ChandaAmSchema.safeParse(rawData)
+
+    if (!result.success) {
+        return { success: false, errors: result.error.flatten().fieldErrors, message: 'Validation failed' }
+    }
+
+    try {
+        const db = await getDb()
+        const match: any = { _id: new ObjectId(id) }
+        if (session.user.role === 'STANDARD_ADMIN') {
+            match.organizationId = new ObjectId(session.user.organizationId)
+        }
+
+        await db.collection('ChandaAm').updateOne(match, {
+            $set: {
+                ...result.data,
+                updatedAt: new Date(),
+            }
+        })
+
+        revalidatePath('/dashboard/records')
+        revalidatePath('/dashboard')
+        return { success: true, message: 'Record updated successfully' }
+    } catch (error) {
+        console.error(error)
+        return { success: false, message: 'Failed to update record' }
+    }
+}
+
 /**
  * Create a new Tajnid Record
  */
@@ -259,6 +293,40 @@ export async function createTajnidRecord(formData: FormData) {
     } catch (error) {
         console.error(error)
         return { success: false, message: 'Failed to create record' }
+    }
+}
+
+export async function updateTajnidRecord(id: string, formData: FormData) {
+    const session = await getSession()
+    if (!session || !session.user.organizationId) return { success: false, message: 'Unauthorized' }
+
+    const rawData = Object.fromEntries(formData.entries())
+    const result = TajnidSchema.safeParse(rawData)
+
+    if (!result.success) {
+        return { success: false, errors: result.error.flatten().fieldErrors, message: 'Validation failed' }
+    }
+
+    try {
+        const db = await getDb()
+        const match: any = { _id: new ObjectId(id) }
+        if (session.user.role === 'STANDARD_ADMIN') {
+            match.organizationId = new ObjectId(session.user.organizationId)
+        }
+
+        await db.collection('TajnidRecord').updateOne(match, {
+            $set: {
+                ...result.data,
+                updatedAt: new Date(),
+            }
+        })
+
+        revalidatePath('/dashboard/records')
+        revalidatePath('/dashboard')
+        return { success: true, message: 'Record updated successfully' }
+    } catch (error) {
+        console.error(error)
+        return { success: false, message: 'Failed to update record' }
     }
 }
 
@@ -312,4 +380,112 @@ export async function createStandardAdminAction(fullName: string, organizationNa
         if (error.code === 11000) return { success: false, message: 'Admin with this name/email/organization already exists' }
         return { success: false, message: 'Failed to create admin' }
     }
+}
+
+/**
+ * Delete multiple records
+ */
+export async function deleteRecords(ids: string[], type: 'chanda' | 'tajnid') {
+    const session = await getSession()
+    if (!session || !session.user.organizationId) return { success: false, message: 'Unauthorized' }
+
+    try {
+        const db = await getDb()
+        const collection = type === 'chanda' ? 'ChandaAm' : 'TajnidRecord'
+        const objectIds = ids.map(id => new ObjectId(id))
+
+        const match: any = { _id: { $in: objectIds } }
+        if (session.user.role === 'STANDARD_ADMIN') {
+            match.organizationId = new ObjectId(session.user.organizationId)
+        }
+
+        const result = await db.collection(collection).deleteMany(match)
+
+        revalidatePath('/dashboard/records')
+        revalidatePath('/dashboard')
+        return { success: true, message: `${result.deletedCount} records deleted successfully` }
+    } catch (error) {
+        console.error(error)
+        return { success: false, message: 'Failed to delete records' }
+    }
+}
+
+/**
+ * Create multiple records
+ */
+export async function createMultipleRecords(data: any[], type: 'chanda' | 'tajnid') {
+    const session = await getSession()
+    if (!session || !session.user.organizationId) return { success: false, message: 'Unauthorized' }
+
+    if (!Array.isArray(data) || data.length === 0) return { success: false, message: 'No data provided' }
+
+    try {
+        const db = await getDb()
+        const collection = type === 'chanda' ? 'ChandaAm' : 'TajnidRecord'
+        const schema = type === 'chanda' ? ChandaAmSchema : TajnidSchema
+
+        const validatedRecords = data.map(item => {
+            const result = schema.safeParse(item)
+            if (!result.success) throw new Error('Validation failed for one or more records')
+            return {
+                ...result.data,
+                organizationId: new ObjectId(session.user.organizationId as string),
+                adminId: new ObjectId(session.user.id),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            }
+        })
+
+        await db.collection(collection).insertMany(validatedRecords)
+
+        revalidatePath('/dashboard/records')
+        revalidatePath('/dashboard')
+        return { success: true, message: `${validatedRecords.length} records created successfully` }
+    } catch (error: any) {
+        console.error(error)
+        return { success: false, message: error.message || 'Failed to create records' }
+    }
+}
+/**
+ * Fetch All Records for Export (No Pagination)
+ */
+export async function getAllRecordsForExport(type: 'chanda' | 'tajnid', query?: string, filters?: { month?: string, majlis?: string, orgId?: string }) {
+    const session = await getSession()
+    if (!session) return []
+
+    const db = await getDb()
+    const collection = type === 'chanda' ? 'ChandaAm' : 'TajnidRecord'
+
+    const match: any = {}
+    if (session.user.role === 'STANDARD_ADMIN') {
+        match.organizationId = new ObjectId(session.user.organizationId)
+    } else if (filters?.orgId) {
+        match.organizationId = new ObjectId(filters.orgId)
+    }
+
+    if (type === 'chanda' && filters?.month) {
+        match.monthPaidFor = filters.month
+    } else if (type === 'tajnid' && filters?.majlis) {
+        match.majlis = filters.majlis
+    }
+
+    if (query) {
+        if (type === 'chanda') {
+            match.$or = [
+                { name: { $regex: query, $options: 'i' } },
+                { chandaNumber: { $regex: query, $options: 'i' } },
+                { receiptNo: { $regex: query, $options: 'i' } },
+            ]
+        } else {
+            match.$or = [
+                { surname: { $regex: query, $options: 'i' } },
+                { otherNames: { $regex: query, $options: 'i' } },
+                { chandaNo: { $regex: query, $options: 'i' } },
+                { email: { $regex: query, $options: 'i' } },
+            ]
+        }
+    }
+
+    const records = await db.collection(collection).find(match).sort({ createdAt: -1 }).toArray()
+    return JSON.parse(JSON.stringify(records))
 }
