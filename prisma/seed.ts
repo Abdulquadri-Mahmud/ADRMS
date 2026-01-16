@@ -49,26 +49,7 @@ async function main() {
 
   console.log('Primary Super Admin upserted.')
 
-  const adeyemiPassword = await bcrypt.hash('adeyemi001', 10)
-  await db.collection('User').findOneAndUpdate(
-    { email: 'adeyemicodes@gmail.com' },
-    {
-      $set: {
-        password: adeyemiPassword,
-        role: 'SUPER_ADMIN',
-        organizationId: defaultOrgId,
-        updatedAt: new Date()
-      },
-      $setOnInsert: {
-        email: 'adeyemicodes@gmail.com',
-        name: 'Adeyemi Super Admin',
-        createdAt: new Date()
-      }
-    },
-    { upsert: true }
-  )
 
-  console.log('Adeyemi Super Admin upserted.')
   console.log('Seed completed successfully.')
 }
 

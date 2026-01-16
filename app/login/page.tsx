@@ -17,8 +17,8 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-6">
-            <div className="max-w-md w-full md:p-10 p-6 bg-white md:rounded-[2.5rem] rounded-2xl border border-gray-100">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-2">
+            <div className="max-w-md w-full md:p-10 p-3 bg-white md:rounded-[2.5rem] rounded-2xl border border-gray-100">
                 <div className="text-center">
                     <div className="flex items-center justify-center scale-110 mb-2">
                         <Logo width={45} height={45} text="ADRMS" size="xl" />
