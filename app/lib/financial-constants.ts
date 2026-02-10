@@ -13,15 +13,12 @@ export const FINANCIAL_CATEGORIES = {
         'Maintenance',
         'Transportation',
         'Communication',
-        'Other Expenses'
-    ],
-    PURCHASE: [
         'Office Supplies',
         'Equipment',
         'Furniture',
         'Books/Publications',
         'Food & Refreshments',
-        'Other Purchases'
+        'Other Expenses'
     ]
 }
 

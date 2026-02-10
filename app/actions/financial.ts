@@ -10,7 +10,7 @@ import { getSession } from '@/lib/session'
  * Zod Schema for Financial Record Validation
  */
 const FinancialRecordSchema = z.object({
-    type: z.enum(['INCOME', 'EXPENSE', 'PURCHASE'], { message: 'Transaction type is required' }),
+    type: z.enum(['INCOME', 'EXPENSE'], { message: 'Transaction type is required' }),
     category: z.string().min(1, 'Category is required'),
     amount: z.coerce.number().positive('Amount must be greater than 0'),
     description: z.string().min(1, 'Description is required'),
@@ -360,7 +360,6 @@ export async function getFinancialSummary(filters?: {
 
     let totalIncome = 0
     let totalExpenses = 0
-    let totalPurchases = 0
     let recordCount = 0
 
     results.forEach((result: any) => {
@@ -369,17 +368,14 @@ export async function getFinancialSummary(filters?: {
             totalIncome = result.total
         } else if (result._id === 'EXPENSE') {
             totalExpenses = result.total
-        } else if (result._id === 'PURCHASE') {
-            totalPurchases = result.total
         }
     })
 
-    const netBalance = totalIncome - totalExpenses - totalPurchases
+    const netBalance = totalIncome - totalExpenses
 
     return {
         totalIncome,
         totalExpenses,
-        totalPurchases,
         netBalance,
         recordCount
     }

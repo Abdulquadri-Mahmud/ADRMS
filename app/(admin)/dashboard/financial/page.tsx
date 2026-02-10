@@ -63,7 +63,7 @@ export default async function FinancialPage({
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Financial Tracking</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        Manage income, expenses, and purchases for <span className="text-emerald-600 font-bold">{currentOrgName || 'Your Organization'}</span>
+                        Manage income and expenses for <span className="text-emerald-600 font-bold">{currentOrgName || 'Your Organization'}</span>
                     </p>
                 </div>
             </div>

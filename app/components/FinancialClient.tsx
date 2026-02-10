@@ -43,8 +43,7 @@ import {
 
 const TRANSACTION_TYPES = [
     { id: 'INCOME', label: 'Income', icon: TrendingUp, color: 'emerald' },
-    { id: 'EXPENSE', label: 'Expense', icon: TrendingDown, color: 'red' },
-    { id: 'PURCHASE', label: 'Purchase', icon: ShoppingCart, color: 'amber' }
+    { id: 'EXPENSE', label: 'Expense', icon: TrendingDown, color: 'red' }
 ]
 
 // Export column definitions
@@ -72,7 +71,6 @@ export default function FinancialClient({
     summary: {
         totalIncome: number,
         totalExpenses: number,
-        totalPurchases: number,
         netBalance: number,
         recordCount: number
     },
@@ -261,7 +259,7 @@ export default function FinancialClient({
     return (
         <div className="space-y-8">
             {/* Statistics Dashboard */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
                     title="Total Income"
                     value={summary.totalIncome}
@@ -273,12 +271,6 @@ export default function FinancialClient({
                     value={summary.totalExpenses}
                     icon={ArrowUpCircle}
                     color="red"
-                />
-                <StatCard
-                    title="Total Purchases"
-                    value={summary.totalPurchases}
-                    icon={Package}
-                    color="amber"
                 />
                 <StatCard
                     title="Net Balance"
@@ -495,12 +487,11 @@ function StatCard({ title, value, icon: Icon, color }: {
     title: string,
     value: number,
     icon: any,
-    color: 'emerald' | 'red' | 'amber'
+    color: 'emerald' | 'red'
 }) {
     const colorClasses = {
         emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
         red: 'bg-red-50 text-red-600 border-red-100',
-        amber: 'bg-amber-50 text-amber-600 border-amber-100'
     }
 
     return (
@@ -526,7 +517,6 @@ function FinancialTable({ records, onView, onEdit, selectedIds, onSelect, onSele
         switch (type) {
             case 'INCOME': return 'bg-emerald-50 text-emerald-600'
             case 'EXPENSE': return 'bg-red-50 text-red-600'
-            case 'PURCHASE': return 'bg-amber-50 text-amber-600'
             default: return 'bg-gray-50 text-gray-600'
         }
     }
@@ -649,10 +639,6 @@ function RecordModal({ initialData, onClose, refresh }: {
                 return isSelected
                     ? 'bg-red-100 text-red-700 border-red-200 shadow-sm'
                     : 'hover:bg-gray-50 text-gray-600 border-transparent'
-            case 'PURCHASE':
-                return isSelected
-                    ? 'bg-amber-100 text-amber-700 border-amber-200 shadow-sm'
-                    : 'hover:bg-gray-50 text-gray-600 border-transparent'
             default:
                 return ''
         }
@@ -696,7 +682,7 @@ function RecordModal({ initialData, onClose, refresh }: {
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
                             Transaction Type
                         </label>
-                        <div className="grid grid-cols-3 gap-3 p-1.5 bg-gray-50/80 rounded-2xl border border-gray-100">
+                        <div className="grid grid-cols-2 gap-3 p-1.5 bg-gray-50/80 rounded-2xl border border-gray-100">
                             {TRANSACTION_TYPES.map(type => {
                                 const Icon = type.icon
                                 return (
