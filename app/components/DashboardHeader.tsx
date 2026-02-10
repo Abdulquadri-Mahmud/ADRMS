@@ -14,7 +14,8 @@ import {
     ChevronDown,
     Menu,
     X,
-    Building2
+    Building2,
+    Wallet
 } from 'lucide-react'
 import { logoutAction } from '@/app/actions/auth'
 
@@ -61,6 +62,7 @@ export default function DashboardHeader({ session }: { session: any }) {
     const navLinks = [
         { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/dashboard/records', label: 'Registry', icon: FileSpreadsheet },
+        { href: '/dashboard/financial', label: 'Inventory', icon: Wallet },
     ]
 
     const dropdownLinks = [
@@ -69,8 +71,8 @@ export default function DashboardHeader({ session }: { session: any }) {
 
     return (
         <nav className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
-                ? "bg-white/80 backdrop-blur-xl border-b border-gray-100 py-2 shadow-sm"
-                : "bg-white py-1 border-b border-transparent"
+            ? "bg-white/80 backdrop-blur-xl border-b border-gray-100 py-2 shadow-sm"
+            : "bg-white py-1 border-b border-transparent"
             }`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16 items-center">
