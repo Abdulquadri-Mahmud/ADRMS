@@ -83,6 +83,8 @@ const MONTH_MAP: { [key: string]: string } = {
     'december': 'DEC', 'dec': 'DEC'
 }
 
+const MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+
 /**
  * Normalize month input to abbreviated format (e.g., September → SEP, SEP2024 → SEP)
  */
@@ -123,7 +125,7 @@ function monthPaidForIncludes(monthPaidFor: string | null | undefined, searchMon
 /**
  * Fetch Chanda Am Records
  */
-export async function getChandaAmRecords(query?: string, page = 1, limit = 20, filters?: { month?: string, orgId?: string }) {
+export async function getChandaAmRecords(query?: string, page = 1, limit = 20, filters?: { month?: string, year?: string, orgId?: string }) {
     const session = await getSession()
     if (!session) return { records: [], total: 0, totalPages: 0 }
 
@@ -137,27 +139,30 @@ export async function getChandaAmRecords(query?: string, page = 1, limit = 20, f
         match.organizationId = new ObjectId(filters.orgId)
     }
 
-    if (filters?.month) {
-        // Inclusive month filtering: match records where monthPaidFor contains the specified month
-        // Supports various formats: SEP, September, SEP2024
-        const months = filters.month.split(',').map(m => m.trim()).filter(m => m)
+    if (filters?.month || filters?.year) {
+        // Handle year and month filtering for ChandaAm records
+        // Data format: monthPaidFor is comma-separated "MMMYYYY" values (e.g., "JAN2024, FEB2024")
 
-        if (months.length > 0) {
-            // Normalize each search month to abbreviated format
-            const normalizedMonths = months.map(m => normalizeMonth(m))
+        const year = filters.year
+        const month = filters.month
 
-            // Build regex patterns for each normalized month
-            // This matches the month abbreviation at the start of MMMYYYY format
-            const regexPatterns = normalizedMonths.map(month => {
-                // Escape special regex characters and match month at word boundary
-                const escaped = month.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-                // Match: start of string OR after comma/space, then month, then optional year
-                return `(^|,\\s*)${escaped}(\\d{4})?(\\s*,|\\s*$)`
-            })
+        if (year && month) {
+            // Both year and month specified: Filter for specific MMMYYYY (e.g., "SEP2024")
+            const normalizedMonth = normalizeMonth(month)
+            const targetMonthYear = `${normalizedMonth}${year}`
 
-            // Combine patterns with OR
-            const combinedPattern = regexPatterns.join('|')
-            match.monthPaidFor = { $regex: combinedPattern, $options: 'i' }
+            // Match records where monthPaidFor contains the exact MMMYYYY pattern
+            const escaped = targetMonthYear.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            match.monthPaidFor = { $regex: `(^|,\\s*)${escaped}(\\s*,|\\s*$)`, $options: 'i' }
+        } else if (year && !month) {
+            // Only year specified: Filter for all months in that year
+            const allMonthsPattern = MONTH_ABBR.map(m => m).join('|')
+            match.monthPaidFor = { $regex: `(${allMonthsPattern})${year}`, $options: 'i' }
+        } else if (!year && month) {
+            // Only month specified: Filter for that month across all years
+            const normalizedMonth = normalizeMonth(month)
+            const escaped = normalizedMonth.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            match.monthPaidFor = { $regex: `(^|,\\s*)${escaped}\\d{4}(\\s*,|\\s*$)`, $options: 'i' }
         }
     }
 
@@ -609,7 +614,7 @@ export async function createMultipleRecords(data: any[], type: 'chanda' | 'tajni
 /**
  * Fetch All Records for Export (No Pagination)
  */
-export async function getAllRecordsForExport(type: 'chanda' | 'tajnid', query?: string, filters?: { month?: string, majlis?: string, orgId?: string }) {
+export async function getAllRecordsForExport(type: 'chanda' | 'tajnid', query?: string, filters?: { month?: string, year?: string, majlis?: string, orgId?: string }) {
     const session = await getSession()
     if (!session) return []
 
@@ -623,25 +628,34 @@ export async function getAllRecordsForExport(type: 'chanda' | 'tajnid', query?: 
         match.organizationId = new ObjectId(filters.orgId)
     }
 
-    if (type === 'chanda' && filters?.month) {
-        // Inclusive month filtering: match records where monthPaidFor contains the specified month
-        // Supports various formats: SEP, September, SEP2024
-        const months = filters.month.split(',').map(m => m.trim()).filter(m => m)
+    if (type === 'chanda' && (filters?.month || filters?.year)) {
+        // Handle year and month filtering for ChandaAm records
+        // Data format: monthPaidFor is comma-separated "MMMYYYY" values (e.g., "JAN2024, FEB2024")
 
-        if (months.length > 0) {
-            // Normalize each search month to abbreviated format
-            const normalizedMonths = months.map(m => normalizeMonth(m))
+        const year = filters.year
+        const month = filters.month
 
-            // Build regex patterns for each normalized month
-            const regexPatterns = normalizedMonths.map(month => {
-                // Escape special regex characters and match month at word boundary
-                const escaped = month.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-                return `(^|,\\s*)${escaped}(\\d{4})?(\\s*,|\\s*$)`
-            })
+        if (year && month) {
+            // Both year and month specified: Filter for specific MMMYYYY (e.g., "SEP2024")
+            const normalizedMonth = normalizeMonth(month)
+            const targetMonthYear = `${normalizedMonth}${year}`
 
-            // Combine patterns with OR
-            const combinedPattern = regexPatterns.join('|')
-            match.monthPaidFor = { $regex: combinedPattern, $options: 'i' }
+            // Match records where monthPaidFor contains the exact MMMYYYY pattern
+            // Pattern matches: start of string OR after comma/space, then MMMYYYY, then comma/space OR end
+            const escaped = targetMonthYear.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            match.monthPaidFor = { $regex: `(^|,\\s*)${escaped}(\\s*,|\\s*$)`, $options: 'i' }
+        } else if (year && !month) {
+            // Only year specified: Filter for all months in that year (e.g., all of 2024)
+            // Match any month abbreviation followed by the year
+            // Pattern: (JAN|FEB|MAR|...)2024
+            const allMonthsPattern = MONTH_ABBR.map(m => m).join('|')
+            match.monthPaidFor = { $regex: `(${allMonthsPattern})${year}`, $options: 'i' }
+        } else if (!year && month) {
+            // Only month specified: Filter for that month across all years (e.g., all SEP)
+            const normalizedMonth = normalizeMonth(month)
+            const escaped = normalizedMonth.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            // Match month abbreviation followed by any 4 digits (year)
+            match.monthPaidFor = { $regex: `(^|,\\s*)${escaped}\\d{4}(\\s*,|\\s*$)`, $options: 'i' }
         }
     }
 

@@ -7,7 +7,7 @@ import { getSession } from '@/lib/session'
 export default async function RecordsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ q?: string; page?: string; type?: string; month?: string; majlis?: string; orgId?: string }>
+    searchParams: Promise<{ q?: string; page?: string; type?: string; month?: string; year?: string; majlis?: string; orgId?: string }>
 }) {
     const session = await getSession()
     const filters = await searchParams
@@ -15,6 +15,7 @@ export default async function RecordsPage({
     const page = Number(filters?.page) || 1
     const type = filters?.type || 'chanda'
     const month = filters?.month || undefined
+    const year = filters?.year || undefined
     const majlis = filters?.majlis || undefined
     const orgId = filters?.orgId || undefined
 
@@ -28,10 +29,10 @@ export default async function RecordsPage({
         tajnidTotal = data.total
         // We also need Chanda total if we want to show it, but user specifically asked for Tajnid.
         // Let's fetch Chanda total too for completeness in tabs
-        const chandaRes = await getChandaAmRecords(query, 1, 1, { month, orgId })
+        const chandaRes = await getChandaAmRecords(query, 1, 1, { month, year, orgId })
         chandaTotal = chandaRes.total
     } else {
-        data = await getChandaAmRecords(query, page, 20, { month, orgId })
+        data = await getChandaAmRecords(query, page, 20, { month, year, orgId })
         chandaTotal = data.total
         // Fetch Tajnid total to display on Chanda view
         const tajnidRes = await getTajnidRecords(query, 1, 1, { majlis, orgId })

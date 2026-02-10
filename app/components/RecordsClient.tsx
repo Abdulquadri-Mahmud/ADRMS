@@ -113,7 +113,7 @@ export default function RecordsClient({
     tajnidTotal?: number,
     chandaTotal?: number,
     organizations?: any[],
-    searchParams: { q?: string, page?: string, type?: string, month?: string, majlis?: string, orgId?: string }
+    searchParams: { q?: string, page?: string, type?: string, month?: string, year?: string, majlis?: string, orgId?: string }
 }) {
     const router = useRouter()
     // Safe defaults
@@ -164,7 +164,7 @@ export default function RecordsClient({
 
     const setType = (type: string) => {
         setSearchTerm('')
-        updateParams({ type, page: '1', q: null, month: null, majlis: null })
+        updateParams({ type, page: '1', q: null, month: null, year: null, majlis: null })
     }
 
     const handleFilterChange = (key: string, value: string) => {
@@ -222,13 +222,19 @@ export default function RecordsClient({
         try {
             // Merge custom filters with current search params
             const filters: any = {
-                month: customFilters?.month || searchParams.month,
                 majlis: searchParams.majlis
             }
 
-            // If year is specified, filter by year
+            // Add year filter if specified
             if (customFilters?.year) {
                 filters.year = customFilters.year
+            }
+
+            // Add month filter if specified
+            if (customFilters?.month) {
+                filters.month = customFilters.month
+            } else if (searchParams.month) {
+                filters.month = searchParams.month
             }
 
             const allRecords = await getAllRecordsForExport(
@@ -237,8 +243,15 @@ export default function RecordsClient({
                 filters
             )
 
-            // Sort records by date to ensure proper grouping
+            // Sort records by monthPaidFor if filtering by year/month, otherwise by date
             const sortedRecords = [...allRecords].sort((a, b) => {
+                // If we're filtering by year/month, sort by monthPaidFor
+                if (currentType === 'chanda' && (customFilters?.year || customFilters?.month)) {
+                    const monthA = a.monthPaidFor || ''
+                    const monthB = b.monthPaidFor || ''
+                    return monthA.localeCompare(monthB)
+                }
+                // Otherwise sort by date
                 const dateA = new Date(a.date || a.createdAt).getTime()
                 const dateB = new Date(b.date || b.createdAt).getTime()
                 return dateA - dateB
@@ -248,11 +261,52 @@ export default function RecordsClient({
             let currentGroupMonth = ''
 
             sortedRecords.forEach((record: any) => {
-                const recordDate = new Date(record.date || record.createdAt)
-                const monthYear = recordDate.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase()
+                // Determine the group header based on filters
+                let monthYear = ''
+
+                if (currentType === 'chanda' && (customFilters?.year || customFilters?.month)) {
+                    // When filtering by year/month, use the filter values for grouping
+                    if (customFilters?.year && customFilters?.month) {
+                        // Both year and month: Use "MONTH YEAR" format
+                        const monthIndex = MONTH_ABBR.indexOf(customFilters.month.toUpperCase())
+                        const monthName = monthIndex >= 0 ? MONTHS[monthIndex] : customFilters.month
+                        monthYear = `${monthName.toUpperCase()} ${customFilters.year}`
+                    } else if (customFilters?.year) {
+                        // Year only: Group by monthPaidFor from the record
+                        if (record.monthPaidFor) {
+                            // Extract first month from monthPaidFor (e.g., "JAN2026" from "JAN2026, FEB2026")
+                            const firstMonth = record.monthPaidFor.split(',')[0].trim()
+                            const match = firstMonth.match(/^([A-Z]+)(\d{4})$/)
+                            if (match) {
+                                const monthAbbr = match[1]
+                                const year = match[2]
+                                const monthIndex = MONTH_ABBR.indexOf(monthAbbr)
+                                const monthName = monthIndex >= 0 ? MONTHS[monthIndex] : monthAbbr
+                                monthYear = `${monthName.toUpperCase()} ${year}`
+                            }
+                        }
+                    } else if (customFilters?.month) {
+                        // Month only: Group by year from monthPaidFor
+                        if (record.monthPaidFor) {
+                            const firstMonth = record.monthPaidFor.split(',')[0].trim()
+                            const match = firstMonth.match(/^([A-Z]+)(\d{4})$/)
+                            if (match) {
+                                const monthAbbr = match[1]
+                                const year = match[2]
+                                const monthIndex = MONTH_ABBR.indexOf(monthAbbr)
+                                const monthName = monthIndex >= 0 ? MONTHS[monthIndex] : monthAbbr
+                                monthYear = `${monthName.toUpperCase()} ${year}`
+                            }
+                        }
+                    }
+                } else {
+                    // No filters or Tajnid: Use record date
+                    const recordDate = new Date(record.date || record.createdAt)
+                    monthYear = recordDate.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase()
+                }
 
                 // Add group header if month changes
-                if (monthYear !== currentGroupMonth) {
+                if (monthYear && monthYear !== currentGroupMonth) {
                     currentGroupMonth = monthYear
                     // Add an empty row before new group (except first)
                     if (processedData.length > 0) {
@@ -439,27 +493,54 @@ export default function RecordsClient({
                             />
                         </div>
 
-                        <div className="relative flex-1">
-                            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <select
-                                className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none font-bold text-sm appearance-none cursor-pointer"
-                                onChange={(e) => handleFilterChange('month', e.target.value)}
-                                value={searchParams.month || ''}
-                            >
-                                <option value="">All Months</option>
-                                {currentType === 'chanda' ? (
-                                    // For ChandaAm, show MMMYYYY format options
-                                    MONTH_YEAR_OPTIONS.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))
-                                ) : (
-                                    // For Tajnid, keep simple month names
-                                    MONTHS.map(opt => (
+                        {currentType === 'chanda' && (
+                            <div className="relative flex-1">
+                                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <select
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none font-bold text-sm appearance-none cursor-pointer"
+                                    onChange={(e) => handleFilterChange('year', e.target.value)}
+                                    value={searchParams.year || ''}
+                                >
+                                    <option value="">All Years</option>
+                                    {[...Array(5)].map((_, i) => {
+                                        const year = new Date().getFullYear() - i
+                                        return <option key={year} value={year}>{year}</option>
+                                    })}
+                                </select>
+                            </div>
+                        )}
+
+                        {currentType === 'chanda' && (
+                            <div className="relative flex-1">
+                                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <select
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none font-bold text-sm appearance-none cursor-pointer"
+                                    onChange={(e) => handleFilterChange('month', e.target.value)}
+                                    value={searchParams.month || ''}
+                                >
+                                    <option value="">All Months</option>
+                                    {MONTH_ABBR.map((month, idx) => (
+                                        <option key={month} value={month}>{MONTHS[idx]}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {currentType === 'tajnid' && (
+                            <div className="relative flex-1">
+                                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <select
+                                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none font-bold text-sm appearance-none cursor-pointer"
+                                    onChange={(e) => handleFilterChange('month', e.target.value)}
+                                    value={searchParams.month || ''}
+                                >
+                                    <option value="">All Months</option>
+                                    {MONTHS.map(opt => (
                                         <option key={opt} value={opt}>{opt}</option>
-                                    ))
-                                )}
-                            </select>
-                        </div>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         {currentType === 'tajnid' && (
                             <div className="relative flex-1">
